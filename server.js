@@ -374,9 +374,8 @@ class Bot {
 }
 
 new WebSocket.Server({
-    port: config.server.port
-}).on('connection', ws => {
-    setInterval(() => {
+    port: process.env.PORT || config.server.port,
+    host: '0.0.0.0'
         userWS.send(Buffer.from([4, connectedBots, spawnedBots]))
         userWS.send(Buffer.from([5, serverPlayers]))
     }, 1000);
