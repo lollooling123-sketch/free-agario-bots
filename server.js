@@ -501,6 +501,6 @@ new WebSocket.Server({
             }, 1000)
         }
 
-        logger.error('[SERVER] User disconnected!')
+                logger.error('[SERVER] User disconnected!')
     })
-})})
+})
