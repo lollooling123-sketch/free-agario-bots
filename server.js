@@ -376,14 +376,23 @@ class Bot {
 new WebSocket.Server({
     port: process.env.PORT || config.server.port,
     host: '0.0.0.0'
-        userWS.send(Buffer.from([4, connectedBots, spawnedBots]))
-        userWS.send(Buffer.from([5, serverPlayers]))
+}).on('connection', ws => {
+
+    setInterval(() => {
+        if (userWS) {
+            userWS.send(Buffer.from([4, connectedBots, spawnedBots]))
+            userWS.send(Buffer.from([5, serverPlayers]))
+        }
     }, 1000);
+
     userWS = ws
     logger.good('[SERVER] User connected!')
+
     ws.on('message', buffer => {
         const reader = new Reader(buffer)
+
         switch (reader.readUint8()) {
+
             case 0:
                 if (!user.startedBots) {
                     game.url = reader.readString()
@@ -392,64 +401,106 @@ new WebSocket.Server({
                     user.isAlive = !!reader.readUint8()
                     bots.name = reader.readString()
                     bots.amount = reader.readUint8()
+
                     dataBot.connect()
+
                     let index = 0
+
                     startBotsInterval = setInterval(() => {
-                        if (dataBot.lastPlayersAmount < 195 && connectedBots < bots.amount && !stoppingBots) userBots.push(new Bot())
+                        if (
+                            dataBot.lastPlayersAmount < 195 &&
+                            connectedBots < bots.amount &&
+                            !stoppingBots
+                        ) {
+                            userBots.push(new Bot())
+                        }
                     }, 150)
+
                     logger.good('[SERVER] Starting bots...')
                 }
                 break
+
             case 1:
                 if (user.startedBots && !stoppingBots) {
                     stoppingBots = true
                     ws.send(Buffer.from([1]))
+
                     let seconds = 0
+
                     setInterval(() => {
                         if (seconds === 30) {
                             ws.send(Buffer.from([2]))
                             setTimeout(process.exit, 1000)
                         } else {
-                            logger.warn(`[SERVER] Stopping bots in ${30 - seconds} seconds`)
+                            logger.warn(
+                                `[SERVER] Stopping bots in ${30 - seconds} seconds`
+                            )
                             seconds++
                         }
                     }, 1000)
                 }
                 break
+
             case 2:
                 for (const bot of userBots) {
-                    if (bot.isAlive && bot.followMouse && !stoppingBots && !bots.ai) bot.send(Buffer.from([17]))
+                    if (
+                        bot.isAlive &&
+                        bot.followMouse &&
+                        !stoppingBots &&
+                        !bots.ai
+                    ) {
+                        bot.send(Buffer.from([17]))
+                    }
                 }
                 break
+
             case 3:
                 for (const bot of userBots) {
-                    if (bot.isAlive && bot.followMouse && !stoppingBots && !bots.ai) bot.send(Buffer.from([21]))
+                    if (
+                        bot.isAlive &&
+                        bot.followMouse &&
+                        !stoppingBots &&
+                        !bots.ai
+                    ) {
+                        bot.send(Buffer.from([21]))
+                    }
                 }
                 break
+
             case 4:
                 bots.ai = !!reader.readUint8()
                 break
+
             case 5:
                 user.isAlive = !!reader.readUint8()
                 break
+
             case 6:
                 user.mouseX = reader.readInt32()
                 user.mouseY = reader.readInt32()
                 break
         }
     })
+
     ws.on('close', () => {
+
         if (user.startedBots && !stoppingBots) {
             stoppingBots = true
+
             let seconds = 0
+
             setInterval(() => {
-                if (seconds === 30) process.exit()
-                else {
-                    logger.warn(`[SERVER] Stopping bots in ${30 - seconds} seconds`)
+                if (seconds === 30) {
+                    process.exit()
+                } else {
+                    logger.warn(
+                        `[SERVER] Stopping bots in ${30 - seconds} seconds`
+                    )
                     seconds++
                 }
             }, 1000)
         }
+
         logger.error('[SERVER] User disconnected!')
     })
-})
+})})
